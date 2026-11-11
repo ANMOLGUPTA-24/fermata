@@ -10,6 +10,8 @@ resume them later, or let them go gracefully.
 
 Built for the **PayPal AI Hackathon** (Nov 2026).
 
+**Demo video (2:54): https://youtu.be/lQVdUYAh4ao**
+
 **Live demo: https://fermata-535c.onrender.com** — the free host sleeps when idle, so the first load can take up to a minute.
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ANMOLGUPTA-24/fermata)
