@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: fermata
+    runtime: node
+    plan: free
+    buildCommand: "echo 'no dependencies to install'"
+    startCommand: "node src/server.js"
+    healthCheckPath: /api/state
+    envVars:
+      - key: PAYPAL_BASE
+        value: https://api-m.sandbox.paypal.com
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false

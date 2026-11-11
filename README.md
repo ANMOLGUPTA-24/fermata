@@ -139,3 +139,23 @@ public/index.html     The retention desk
 ## Licence
 
 MIT — see [LICENSE](LICENSE).
+
+## A PayPal behaviour worth writing down
+
+`POST /v1/billing/subscriptions/{id}/revise` does not apply a plan change. It
+*stages* one and returns an approval link for the subscriber. Until they approve
+it, the subscription carries hidden pending state, and two things become true:
+
+- `POST .../activate` on a paused subscription fails with
+  `SESSION_STATE_NOT_VALID` — *"Buyer has not agreed to subscription"*.
+- `POST .../revise` fails with `SUBSCRIPTION_STATUS_INVALID` once the
+  subscription is `SUSPENDED`, so you cannot undo it from the server either.
+
+A subscription that is paused while a revision is pending is therefore stranded
+until the subscriber acts. Worse, **PayPal does not expose this state**: the
+subscription object for a pending subscription is identical in shape, links and
+`plan_id` to a clean one. We compared them field by field.
+
+Fermata therefore refuses to pause a subscription with an outstanding consent
+request, and `reset` reports the stranded case in plain language rather than a
+bare 422. We found this the expensive way, by stranding a test subscriber.

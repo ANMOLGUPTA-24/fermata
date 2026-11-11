@@ -131,7 +131,16 @@ const routes = {
         const s = await subs.getSubscription(id);
         if (s.status === 'SUSPENDED') {
           const r = await subs.activate(id, 'Demo reset');
-          out.push({ id, from: 'SUSPENDED', ok: r.ok });
+          const stranded = !r.ok && JSON.stringify(r.body || {}).includes('SESSION_STATE_NOT_VALID');
+          out.push({
+            id,
+            from: 'SUSPENDED',
+            ok: r.ok,
+            ...(stranded ? {
+              stranded: true,
+              explain: 'PayPal refuses to reactivate this subscription because a plan change is still awaiting the subscriber\'s approval. The subscriber must approve (or the subscription must be replaced) before it can resume.',
+            } : {}),
+          });
         } else {
           out.push({ id, from: s.status, ok: true, skipped: true });
         }
