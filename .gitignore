@@ -1,3 +1,7 @@
 .env
 node_modules/
 data/approve-links.txt
+video/raw/
+video/check/
+video/take.webm
+video/*.mp4

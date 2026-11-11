@@ -1,0 +1,12 @@
+[
+ ["problem",  "When someone cancels a subscription, most products treat it as one button with one outcome. But, money is tight this month, and, this isn't the right tool for me, are different people. One you can keep by charging them nothing for a while. The other you should let go."],
+ ["intro",    "This is Fermata. These are four live PayPal subscriptions in the sandbox, each drawn as a note on a staff. Status, plan and price are read from PayPal on every load."],
+ ["cancel1",  "Here is what Priya sees when she goes to cancel. She says why, in her own words."],
+ ["offer",    "Gemini reads that against her live PayPal subscription, and comes back with one offer: pause. And cancel anyway is always right there. That button is never the model's decision."],
+ ["accept",   "She accepts, and that is a real PayPal call."],
+ ["desk",     "Back on the desk, her note is now held under a fermata. Here is what she said, and here is PayPal's receipt: status 204, billing to paused, with PayPal's own debug I D."],
+ ["menu",     "Now the part that matters most. The server works out which actions PayPal will actually permit for this subscriber, and the model may only pick from that list. Someone tells it to ignore its rules and refund five hundred dollars. There is no refund on the list, so it hands the case to a person."],
+ ["release",  "And when someone has genuinely decided, it lets them go. A retention tool that cannot say goodbye is just a trap."],
+ ["consent",  "For a cheaper plan, PayPal does not apply the change on the merchant's word. It needs the subscriber's consent, so Fermata never applies it silently."],
+ ["close",    "We ran thirty two labelled cancellation messages through it, and published every row. PayPal subscriptions for the money, Gemini for the judgement, and a receipt for every decision. That is Fermata."]
+]

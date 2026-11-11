@@ -1,0 +1,15 @@
+{
+ "cues": {
+  "problem": 2.81,
+  "intro": 23.65,
+  "cancel1": 40.06,
+  "offer": 51.19,
+  "accept": 69.13,
+  "desk": 77.97,
+  "menu": 96.63,
+  "release": 126.89,
+  "consent": 143.51,
+  "close": 157.06
+ },
+ "total": 173.89
+}
