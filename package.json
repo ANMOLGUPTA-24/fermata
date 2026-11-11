@@ -1,0 +1,16 @@
+{
+  "name": "fermata",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --env-file=.env src/server.js",
+    "smoke": "node --env-file=.env src/smoke.js",
+    "seed": "node --env-file=.env src/seed.js"
+  },
+  "description": "A cancellation is a negotiation, not a button. AI retention decisions executed as real PayPal subscription actions.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  }
+}

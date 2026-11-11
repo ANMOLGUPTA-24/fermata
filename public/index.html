@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fermata — the subscription that knows how to pause</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f5f1; --panel:#fffefb; --ink:#17150f; --muted:#6b6557; --line:#e2ddd2;
+  --accent:#1c5d4a; --accent-soft:#e6f0ea; --warn:#8a5a12; --warn-soft:#fbf1dd;
+  --danger:#8c2f22; --danger-soft:#f8e7e3; --shadow:0 1px 2px rgba(23,21,15,.05),0 8px 24px rgba(23,21,15,.06);
+}
+:root:not([data-theme="light"]){ @media (prefers-color-scheme: dark){
+  --bg:#12110f; --panel:#1a1917; --ink:#f0ece3; --muted:#9a9384; --line:#2c2a26;
+  --accent:#6fd3ad; --accent-soft:#16302a; --warn:#e0b063; --warn-soft:#2e2514;
+  --danger:#f09384; --danger-soft:#33201c; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3);
+}}
+:root[data-theme="dark"]{
+  --bg:#12110f; --panel:#1a1917; --ink:#f0ece3; --muted:#9a9384; --line:#2c2a26;
+  --accent:#6fd3ad; --accent-soft:#16302a; --warn:#e0b063; --warn-soft:#2e2514;
+  --danger:#f09384; --danger-soft:#33201c; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px 80px}
+header{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;padding:32px 0 8px;border-bottom:1px solid var(--line);margin-bottom:28px}
+.mark{font-family:'Instrument Serif',Georgia,serif;font-size:38px;letter-spacing:-.01em}
+.mark em{font-style:italic;color:var(--accent)}
+.tagline{color:var(--muted);font-size:15px;flex:1;min-width:240px}
+.badges{display:flex;gap:8px;flex-wrap:wrap}
+.badge{font:500 11px/1 'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.08em;padding:6px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 25%,transparent)}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:24px;align-items:start}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.panel-h{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.panel-h h2{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600}
+.sub{display:block;width:100%;text-align:left;padding:14px 16px;border:0;border-bottom:1px solid var(--line);background:transparent;cursor:pointer;color:inherit;font:inherit;transition:background .12s}
+.sub:last-child{border-bottom:0}
+.sub:hover{background:color-mix(in srgb,var(--accent) 6%,transparent)}
+.sub[aria-selected="true"]{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.sub .nm{font-weight:600;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.sub .meta{font:400 12.5px/1.45 'JetBrains Mono',monospace;color:var(--muted);margin-top:3px;word-break:break-all}
+.pill{font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.06em;padding:4px 7px;border-radius:5px;white-space:nowrap}
+.pill.ACTIVE{background:var(--accent-soft);color:var(--accent)}
+.pill.SUSPENDED{background:var(--warn-soft);color:var(--warn)}
+.pill.CANCELLED,.pill.UNREACHABLE,.pill.EXPIRED{background:var(--danger-soft);color:var(--danger)}
+.pill.APPROVAL_PENDING{background:var(--line);color:var(--muted)}
+.body{padding:18px 20px}
+label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600;margin-bottom:8px}
+textarea{width:100%;min-height:96px;resize:vertical;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit}
+textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 16px}
+.chip{font-size:13px;padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--muted);cursor:pointer}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+button.primary{background:var(--accent);color:var(--panel);border:0;padding:11px 20px;border-radius:9px;font:600 15px Inter,sans-serif;cursor:pointer}
+button.primary:disabled{opacity:.5;cursor:not-allowed}
+button.ghost{background:transparent;border:1px solid var(--line);color:var(--muted);padding:8px 13px;border-radius:8px;font:500 13px Inter,sans-serif;cursor:pointer}
+button.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.ballot{margin:20px 0 0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.ballot .row{display:flex;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);align-items:flex-start}
+.ballot .row:last-child{border-bottom:0}
+.ballot .row.picked{background:var(--accent-soft)}
+.tick{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--line);flex:none;margin-top:2px;display:grid;place-items:center;font-size:11px;color:var(--panel)}
+.row.picked .tick{background:var(--accent);border-color:var(--accent)}
+.ballot .lbl{font-weight:600;font-size:14.5px}
+.ballot .call{font:400 11.5px/1.4 'JetBrains Mono',monospace;color:var(--muted);margin-top:3px;word-break:break-all}
+.delta{margin-left:auto;font:500 13px 'JetBrains Mono',monospace;white-space:nowrap}
+.delta.neg{color:var(--danger)} .delta.pos{color:var(--accent)}
+.verdict{margin-top:20px;border-left:3px solid var(--accent);padding:2px 0 2px 16px}
+.verdict h3{margin:0 0 6px;font-family:'Instrument Serif',serif;font-size:25px;font-weight:400}
+.reason{color:var(--muted);font-size:14.6px}
+.quote{margin:16px 0 0;padding:14px 16px;background:var(--bg);border:1px solid var(--line);border-radius:10px;font-style:italic}
+.ev{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.ev span{font:400 11.5px 'JetBrains Mono',monospace;background:var(--bg);border:1px solid var(--line);padding:4px 8px;border-radius:6px;color:var(--muted)}
+.rcpt{font:400 12.5px/1.6 'JetBrains Mono',monospace;padding:12px 16px;border-bottom:1px solid var(--line)}
+.rcpt:last-child{border-bottom:0}
+.rcpt .ok{color:var(--accent)} .rcpt .bad{color:var(--danger)}
+.arrow{color:var(--muted)}
+.empty{padding:28px 20px;color:var(--muted);text-align:center;font-size:14px}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.note{font-size:13px;color:var(--muted);margin-top:14px}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="mark">Fer<em>mata</em></div>
+  <div class="tagline">A cancellation is a negotiation, not a button.<br>Retention decisions executed as real PayPal subscription actions.</div>
+  <div class="badges" id="badges"></div>
+</header>
+
+<div class="grid">
+  <div class="panel">
+    <div class="panel-h"><h2>Subscribers</h2><button class="ghost" id="reset">Reset demo</button></div>
+    <div id="list"><div class="empty">Loading from PayPal…</div></div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="panel-h"><h2>Retention desk</h2><span id="who" style="font-size:13px;color:var(--muted)"></span></div>
+      <div class="body">
+        <label for="signal">What did the subscriber say?</label>
+        <textarea id="signal" placeholder="Paste the cancellation message, support ticket, or reason code…"></textarea>
+        <div class="chips" id="chips"></div>
+        <button class="primary" id="ask" disabled>Ask Fermata</button>
+        <div id="out"></div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:24px">
+      <div class="panel-h"><h2>Receipts — every PayPal call this session</h2></div>
+      <div id="receipts"><div class="empty">No actions executed yet.</div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let STATE = null, SELECTED = null, VERDICT = null;
+
+const SAMPLES = [
+  "Money's really tight this month — I have to cancel, sorry.",
+  "I'm not using this enough to justify $29. Cancel please.",
+  "This isn't the right tool for me. I've moved to something else.",
+  "Going travelling for three months, won't need it until March.",
+];
+
+function money(n){ return (n<0?'-':'+') + '$' + Math.abs(n).toFixed(2); }
+
+async function api(path, body){
+  const r = await fetch(path, body ? {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)} : {});
+  if(!r.ok) throw new Error((await r.json()).error || r.statusText);
+  return r.json();
+}
+
+function renderBadges(){
+  $('#badges').innerHTML =
+    `<span class="badge">PayPal ${STATE.environment}</span><span class="badge">${STATE.model}</span>`;
+}
+
+function renderList(){
+  const el = $('#list');
+  if(!STATE.subscriptions.length){ el.innerHTML = '<div class="empty">No subscriptions seeded.</div>'; return; }
+  el.innerHTML = STATE.subscriptions.map(s => {
+    const p = STATE.people[s.id] || {};
+    const plan = STATE.plans.find(x => x.id === s.plan_id);
+    return `<button class="sub" data-id="${s.id}" aria-selected="${SELECTED===s.id}">
+      <div class="nm"><span>${p.name || s.id}</span><span class="pill ${s.status}">${s.status}</span></div>
+      <div class="meta">${s.id}</div>
+      <div class="meta">${plan ? plan.name + ' · $' + plan.price.toFixed(2) + '/mo' : (s.plan_id||'')}</div>
+    </button>`;
+  }).join('');
+  el.querySelectorAll('.sub').forEach(b => b.onclick = () => select(b.dataset.id));
+}
+
+function select(id){
+  SELECTED = id; VERDICT = null;
+  const p = STATE.people[id] || {};
+  $('#who').textContent = p.note || '';
+  $('#ask').disabled = false;
+  $('#out').innerHTML = '';
+  renderList();
+}
+
+function renderChips(){
+  $('#chips').innerHTML = SAMPLES.map((s,i)=>`<button class="chip" data-i="${i}">${s.length>42?s.slice(0,40)+'…':s}</button>`).join('');
+  $('#chips').querySelectorAll('.chip').forEach(c => c.onclick = () => { $('#signal').value = SAMPLES[c.dataset.i]; });
+}
+
+function renderVerdict(v, sub){
+  const rows = v.actions.map(a => {
+    const picked = a.action === v.chosen_action;
+    const d = a.monthlyDelta;
+    return `<div class="row ${picked?'picked':''}">
+      <div class="tick">${picked?'✓':''}</div>
+      <div style="flex:1">
+        <div class="lbl">${a.label}</div>
+        <div class="call">${a.call || 'no PayPal call'} ${a.reversible?'· reversible':'· IRREVERSIBLE'}</div>
+      </div>
+      <div class="delta ${d<0?'neg':(d>0?'pos':'')}">${d===0?'—':money(d)}/mo</div>
+    </div>`;
+  }).join('');
+
+  const canExec = v.plan && v.plan.action !== 'escalate';
+  $('#out').innerHTML = `
+    <div class="ballot">${rows}</div>
+    <div class="verdict">
+      <h3>${v.plan ? v.plan.label : v.chosen_action}</h3>
+      <div class="reason">${v.reasoning}</div>
+      <div class="ev">${(v.evidence_used||[]).map(e=>`<span>${e}</span>`).join('')}
+        <span>confidence ${(v.confidence*100).toFixed(0)}%</span></div>
+      <div class="quote">“${v.message_to_subscriber}”</div>
+      ${v.rejected_pick ? `<div class="note">⚠ The model proposed <b>${v.rejected_pick}</b>, which is not permitted for a subscription in status ${sub.status}. It was rejected and escalated instead.</div>`:''}
+      ${canExec ? `<div style="margin-top:16px"><button class="primary" id="exec">Execute against PayPal</button></div>`:''}
+    </div>`;
+  if(canExec) $('#exec').onclick = () => execute(v);
+}
+
+async function ask(){
+  const text = $('#signal').value.trim();
+  if(!text){ $('#signal').focus(); return; }
+  $('#ask').disabled = true;
+  $('#out').innerHTML = `<div class="note"><span class="spinner"></span> Reading live subscription state from PayPal, then deciding…</div>`;
+  try{
+    const { subscription, verdict } = await api('/api/decide', { subscriptionId: SELECTED, text });
+    VERDICT = verdict; renderVerdict(verdict, subscription);
+  }catch(e){ $('#out').innerHTML = `<div class="note" style="color:var(--danger)">${e.message}</div>`; }
+  $('#ask').disabled = false;
+}
+
+async function execute(v){
+  $('#exec').disabled = true;
+  $('#exec').innerHTML = '<span class="spinner"></span> Calling PayPal…';
+  try{
+    const { receipt } = await api('/api/execute', {
+      subscriptionId: SELECTED, action: v.chosen_action,
+      targetPlanId: v.plan.targetPlanId, reason: (v.reasoning||'').slice(0,120),
+    });
+    await load();
+    select(SELECTED);
+    if(receipt.requiresConsent){
+      $('#out').innerHTML = `<div class="verdict"><h3>Consent required</h3>
+        <div class="reason">PayPal will not move a subscriber to a different price without their approval. Fermata prepared the change and produced a consent link for the subscriber — it cannot be applied silently.</div>
+        <div class="quote" style="font-style:normal"><a href="${receipt.consentLink}" target="_blank" rel="noopener">${receipt.consentLink}</a></div></div>`;
+    }
+  }catch(e){ $('#out').innerHTML = `<div class="note" style="color:var(--danger)">${e.message}</div>`; }
+}
+
+function renderReceipts(){
+  const el = $('#receipts');
+  if(!STATE.receipts.length){ el.innerHTML = '<div class="empty">No actions executed yet.</div>'; return; }
+  el.innerHTML = STATE.receipts.map(r => `<div class="rcpt">
+    <span class="${r.ok?'ok':'bad'}">${r.ok?'✓':'✗'}</span>
+    ${r.at.slice(11,19)} · <b>${r.action}</b> · ${r.subscriptionId}
+    <br>${r.statusBefore} <span class="arrow">→</span> ${r.statusAfter} · ${r.paypalCall}${r.debugId?' · debug-id '+r.debugId:''}${r.requiresConsent?' · awaiting subscriber consent':''}
+  </div>`).join('');
+}
+
+async function load(){
+  STATE = await api('/api/state');
+  renderBadges(); renderList(); renderReceipts();
+}
+
+$('#ask').onclick = ask;
+$('#reset').onclick = async () => { await api('/api/reset', {}); await load(); $('#out').innerHTML=''; };
+renderChips();
+load().catch(e => $('#list').innerHTML = `<div class="empty" style="color:var(--danger)">${e.message}</div>`);
+</script>
+</body>
+</html>

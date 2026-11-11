@@ -1,0 +1,44 @@
+{
+  "productId": "PROD-9LM0247635047260M",
+  "planIds": [
+    "P-04610499PF569673BNL2EUCI",
+    "P-7F721829BK531372YNL2EUCQ"
+  ],
+  "planMap": {
+    "full": "P-04610499PF569673BNL2EUCI",
+    "lite": "P-7F721829BK531372YNL2EUCQ"
+  },
+  "subscriptionIds": [
+    "I-CNSX0HK7KLC9",
+    "I-B2VWHA86DMW2",
+    "I-25CM4VAEJKCD",
+    "I-KB1DSGMFWBWF"
+  ],
+  "buyer": "sb-bhpsh53855618@personal.example.com",
+  "people": {
+    "I-B2VWHA86DMW2": {
+      "name": "Marcus Bell",
+      "since": "2025-06-03",
+      "note": "Agency owner. Heavy user, invoices clients monthly."
+    },
+    "I-25CM4VAEJKCD": {
+      "name": "Lena Okafor",
+      "since": "2026-08-19",
+      "note": "Student. Signed up for one module, light usage."
+    },
+    "I-KB1DSGMFWBWF": {
+      "name": "Tomas Varga",
+      "since": "2025-11-30",
+      "note": "Photographer. Seasonal — quiet every winter."
+    },
+    "I-CNSX0HK7KLC9": {
+      "name": "Priya Raman",
+      "since": "2024-02-11",
+      "note": "Freelance illustrator. Two projects, steady usage."
+    }
+  },
+  "strandedDemoArtifact": {
+    "id": "I-AP6BY2M2996Y",
+    "why": "revise staged a plan change; SUSPENDED + pending consent cannot be reactivated"
+  }
+}
