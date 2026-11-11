@@ -46,13 +46,3 @@ export const setCustomId = (id, value) =>
     { op: 'replace', path: '/custom_id', value },
   ]);
 
-/**
- * Retry an outstanding balance — the actual remedy for involuntary churn,
- * where a subscription is dying from a failed card rather than a decision.
- */
-export const captureOutstanding = (id, amount, note) =>
-  pp('POST', `/v1/billing/subscriptions/${id}/capture`, {
-    note: note || 'Retrying the outstanding balance',
-    capture_type: 'OUTSTANDING_BALANCE',
-    amount: { currency_code: 'USD', value: Number(amount).toFixed(2) },
-  });

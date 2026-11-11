@@ -26,21 +26,33 @@ export async function accessToken() {
 
 /** Every PayPal call in this project goes through here, so each one is logged and auditable. */
 export async function pp(method, path, body, extraHeaders = {}) {
-  const token = await accessToken();
-  const res = await fetch(`${BASE}${path}`, {
-    method,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      ...extraHeaders,
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-    signal: AbortSignal.timeout(20_000),
-  });
-  const text = await res.text();
-  let parsed = null;
-  try { parsed = text ? JSON.parse(text) : null; } catch { parsed = { raw: text }; }
-  return { ok: res.ok, status: res.status, body: parsed, debugId: res.headers.get('paypal-debug-id') };
+  // Reads are safe to repeat, so a stalled sandbox read gets a second and third
+  // try. Writes are sent once: repeating a suspend or cancel blindly is not safe.
+  const tries = method === 'GET' ? 3 : 1;
+  let lastErr;
+  for (let attempt = 1; attempt <= tries; attempt++) {
+    try {
+      const token = await accessToken();
+      const res = await fetch(`${BASE}${path}`, {
+        method,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          ...extraHeaders,
+        },
+        body: body === undefined ? undefined : JSON.stringify(body),
+        signal: AbortSignal.timeout(method === 'GET' ? 10_000 : 20_000),
+      });
+      const text = await res.text();
+      let parsed = null;
+      try { parsed = text ? JSON.parse(text) : null; } catch { parsed = { raw: text }; }
+      if (res.status >= 500 && attempt < tries) { lastErr = new Error(`PayPal ${res.status}`); continue; }
+      return { ok: res.ok, status: res.status, body: parsed, debugId: res.headers.get('paypal-debug-id') };
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr;
 }
 
 export async function ppOrThrow(method, path, body, extraHeaders) {

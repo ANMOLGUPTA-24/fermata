@@ -42,10 +42,27 @@ async function clearAwaitingConsent(id) {
   return subs.setCustomId(id, '-');
 }
 
+/** What subscribers did on the cancel page, newest first, for the desk to show. */
+const events = [];
+
+/** Small in-memory guards so a public demo cannot burn the free model quota. */
+const hits = new Map();
+function throttled(ip, limit = 20, windowMs = 10 * 60_000) {
+  const now = Date.now();
+  const list = (hits.get(ip) || []).filter((t) => now - t < windowMs);
+  list.push(now);
+  hits.set(ip, list);
+  return list.length > limit;
+}
+const decisionCache = new Map(); // same subscriber state + same words => same decision
+const CACHE_TTL = 10 * 60_000;
+
 /** Destructive actions are disabled on the shared hosted demo. */
 const ALLOW_DESTRUCTIVE = process.env.ALLOW_DESTRUCTIVE === 'true';
 
 const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.json': 'application/json' };
+
+const clientIp = (req) => String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
 
 const json = (res, code, body) => {
   res.writeHead(code, { 'Content-Type': 'application/json' });
@@ -95,31 +112,56 @@ const routes = {
       people: seed.people || {},
       allowDestructive: ALLOW_DESTRUCTIVE,
       subscriptions,
+      events,
       receipts,
     };
   },
 
-  'POST /api/decide': async (body) => {
+  'POST /api/decide': async (body, req) => {
     if (!seed.subscriptionIds.includes(body.subscriptionId)) {
       return { error: 'Unknown subscription. This demo only acts on its own seeded subscribers.' };
     }
+    const text = String(body.text || '').slice(0, 1200);
+    if (!text.trim()) return { error: 'Say something first.' };
+    if (throttled(clientIp(req))) {
+      return { error: 'This shared demo limits how often one visitor can ask for a decision. Give it a few minutes.' };
+    }
     const subscription = await subs.getSubscription(body.subscriptionId);
     const [plans, history] = await Promise.all([loadPlans(), subs.transactions(body.subscriptionId)]);
-    const verdict = await decide({
-      subscription,
-      plans,
-      history,
-      signal: {
-        type: body.signalType || 'cancel_intent',
-        text: body.text || '',
-        subscriberName: seed.people?.[body.subscriptionId]?.name,
-      },
-      pendingConsent: awaitingConsent(subscription),
-      allowDestructive: ALLOW_DESTRUCTIVE,
-    });
+    const cacheKey = [body.subscriptionId, subscription.status, subscription.plan_id, awaitingConsent(subscription), text.trim().toLowerCase()].join('|');
+    const cached = decisionCache.get(cacheKey);
+    let verdict;
+    if (cached && Date.now() - cached.at < CACHE_TTL) {
+      verdict = cached.verdict;
+    } else {
+      try {
+        verdict = await decide({
+          subscription,
+          plans,
+          history,
+          signal: {
+            type: 'cancel_intent',
+            text,
+            subscriberName: seed.people?.[body.subscriptionId]?.name,
+          },
+          pendingConsent: awaitingConsent(subscription),
+        });
+      } catch (err) {
+        if (/429|RESOURCE_EXHAUSTED/i.test(String(err))) {
+          return { error: 'The free AI quota for this demo is used up for the moment. Please try again in a little while.' };
+        }
+        throw err;
+      }
+      decisionCache.set(cacheKey, { at: Date.now(), verdict });
+    }
 
+    const source = body.source === 'subscriber' ? 'subscriber' : 'desk';
     const id = randomUUID();
-    verdicts.set(id, { at: Date.now(), subscriptionId: body.subscriptionId, verdict });
+    verdicts.set(id, { at: Date.now(), subscriptionId: body.subscriptionId, verdict, source, text });
+    if (source === 'subscriber') {
+      events.unshift({ id, at: new Date().toISOString(), subscriptionId: body.subscriptionId, text, offered: verdict.chosen_action, offerLabel: verdict.plan?.label, outcome: 'offer shown' });
+      events.length = Math.min(events.length, 30);
+    }
     for (const [k, v] of verdicts) if (Date.now() - v.at > VERDICT_TTL) verdicts.delete(k);
 
     return { subscription, verdict: { ...verdict, verdictId: id } };
@@ -158,10 +200,6 @@ const routes = {
     else if (action === 'resume') call = await subs.activate(subscriptionId, reason || 'Subscriber returning');
     else if (action === 'downgrade') call = await subs.revise(subscriptionId, targetPlanId);
     else if (action === 'release') call = await subs.cancel(subscriptionId, reason || 'Subscriber chose to leave');
-    else if (action === 'retry_payment') {
-      const owed = before.billing_info?.outstanding_balance?.value ?? '0.00';
-      call = await subs.captureOutstanding(subscriptionId, owed, reason);
-    }
     else if (action === 'escalate') call = { ok: true, status: 0, body: { note: 'No PayPal call — handed to a human.' } };
     else return { error: `Unknown action "${action}"` };
 
@@ -174,8 +212,11 @@ const routes = {
     if (consentLink) await markAwaitingConsent(subscriptionId, targetPlanId);
 
     verdicts.delete(body.verdictId);
+    const ev = events.find((e) => e.id === body.verdictId);
+    if (ev) ev.outcome = call.ok ? `accepted: ${action}` : `failed: ${action}`;
 
     const receipt = {
+      source: issued.source || 'desk',
       at: new Date().toISOString(),
       subscriptionId,
       action,
@@ -193,6 +234,23 @@ const routes = {
     };
     receipts.unshift(receipt);
     return { receipt, subscription: after };
+  },
+
+  // The subscriber's own exit. Deliberately NOT a model decision: the way out is
+  // always there, whatever the engine thinks.
+  'POST /api/cancel-anyway': async (body) => {
+    if (!seed.subscriptionIds.includes(body.subscriptionId)) return { error: 'Unknown subscription.' };
+    const ev = events.find((e) => e.id === body.verdictId);
+    if (!ALLOW_DESTRUCTIVE) {
+      if (ev) ev.outcome = 'declined the offer — chose to cancel (not executed on shared demo)';
+      return { executed: false, note: 'On this shared demo the cancellation is recorded but not executed, so one visitor cannot use the demo up for everyone. Locally, with ALLOW_DESTRUCTIVE=true, this calls PayPal\'s cancel endpoint.' };
+    }
+    const before = await subs.getSubscription(body.subscriptionId);
+    const call = await subs.cancel(body.subscriptionId, 'Subscriber chose to cancel');
+    const after = await subs.getSubscription(body.subscriptionId);
+    if (ev) ev.outcome = 'declined the offer — cancelled';
+    receipts.unshift({ source: 'subscriber', at: new Date().toISOString(), subscriptionId: body.subscriptionId, action: 'cancel (subscriber\'s own choice)', paypalCall: `HTTP ${call.status}`, ok: call.ok, debugId: call.debugId || null, statusBefore: before.status, statusAfter: after.status });
+    return { executed: call.ok, status: after.status };
   },
 
   'POST /api/reset': async () => {
@@ -225,6 +283,7 @@ const routes = {
       }
     }
     receipts.length = 0;
+    events.length = 0;
     verdicts.clear();
     return { reset: out };
   },
@@ -237,15 +296,21 @@ createServer(async (req, res) => {
   if (routes[key]) {
     try {
       const body = req.method === 'POST' ? await readBody(req) : {};
-      return json(res, 200, await routes[key](body));
+      return json(res, 200, await routes[key](body, req));
     } catch (err) {
       console.error(key, err);
-      return json(res, 500, { error: String(err.message || err) });
+      const slow = /timeout|aborted|fetch failed|ENETUNREACH|ECONNRESET/i.test(String(err));
+      return json(res, slow ? 503 : 500, {
+        error: slow
+          ? 'PayPal or the AI model took too long to answer just now. Nothing was changed. Please try again.'
+          : String(err.message || err),
+      });
     }
   }
 
   // static
-  let file = url.pathname === '/' ? '/index.html' : url.pathname;
+  let file = url.pathname === '/' ? '/index.html' : url.pathname === '/cancel' ? '/cancel.html' : url.pathname;
+  if (file.includes('..')) file = '/index.html';
   try {
     const buf = await readFile(join(ROOT, 'public', file));
     res.writeHead(200, { 'Content-Type': MIME[extname(file)] || 'application/octet-stream' });

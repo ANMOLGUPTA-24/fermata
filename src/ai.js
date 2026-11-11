@@ -6,7 +6,7 @@ const FALLBACK = 'gemini-3.1-flash-lite';
 const ENDPOINT = (m) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`;
 
-async function call(model, body) {
+async function call(model, body, timeoutMs) {
   const res = await fetch(ENDPOINT(model), {
     method: 'POST',
     headers: {
@@ -14,7 +14,7 @@ async function call(model, body) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(25_000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   const json = await res.json();
   if (!res.ok) throw new Error(`Gemini ${model} ${res.status}: ${json?.error?.message || ''}`);
@@ -35,13 +35,21 @@ export async function judgeJSON({ prompt, schema, system }) {
   };
   if (system) body.systemInstruction = { parts: [{ text: system }] };
 
-  let raw;
-  try {
-    raw = await call(MODEL, body);
-  } catch (err) {
-    if (!/429|404|500|503|RESOURCE_EXHAUSTED|timeout|aborted|fetch failed/i.test(String(err))) throw err;
-    raw = await call(FALLBACK, body);
+  // Free-tier models time out or shed load under demand. Try the primary, then
+  // the lighter model, then each once more, before giving up.
+  const attempts = [[MODEL, 18_000], [FALLBACK, 12_000], [MODEL, 18_000], [FALLBACK, 12_000]];
+  let raw, lastErr;
+  for (const [model, ms] of attempts) {
+    try {
+      raw = await call(model, body, ms);
+      break;
+    } catch (err) {
+      lastErr = err;
+      if (!/429|404|500|503|RESOURCE_EXHAUSTED|timeout|aborted|fetch failed/i.test(String(err))) throw err;
+      await new Promise((r) => setTimeout(r, 700));
+    }
   }
+  if (raw === undefined) throw lastErr;
   return JSON.parse(raw);
 }
 
