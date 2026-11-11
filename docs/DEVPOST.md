@@ -132,6 +132,8 @@ action set reflects the business's own rules, not ours.
 
 ## Testing instructions (paste into the submission form)
 
+Hosted demo: https://fermata-535c.onrender.com
+
 The hosted demo is seeded with four live PayPal sandbox subscriptions and carries
 its own credentials — nothing needs to be configured. The free host sleeps when
 idle, so the first load can take up to a minute.
