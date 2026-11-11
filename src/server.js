@@ -33,22 +33,29 @@ async function readBody(req) {
   return chunks.length ? JSON.parse(Buffer.concat(chunks).toString()) : {};
 }
 
-/** Live state: every field comes from PayPal on each request. */
-async function loadState() {
+/** Live state from PayPal. Subscriptions are always fresh; plan definitions are
+ *  cached briefly because they are immutable in practice and cost a round trip each. */
+let planCache = { at: 0, plans: null };
+
+async function loadPlans() {
+  if (planCache.plans && Date.now() - planCache.at < 60_000) return planCache.plans;
   const plansResp = await subs.listPlans();
-  const plans = (plansResp.plans || []).filter((p) => seed.planIds.includes(p.id));
-  const full = await Promise.all(
-    plans.map(async (p) => ({ ...p, ...(await subs.getPlan(p.id)) }))
-  );
-  const subscriptions = [];
-  for (const id of seed.subscriptionIds) {
-    try {
-      subscriptions.push(await subs.getSubscription(id));
-    } catch (e) {
-      subscriptions.push({ id, status: 'UNREACHABLE', error: String(e.message).slice(0, 160) });
-    }
-  }
-  return { plans: full, subscriptions };
+  const wanted = (plansResp.plans || []).filter((p) => seed.planIds.includes(p.id));
+  // listPlans omits billing_cycles, so fetch each definition - in parallel.
+  const plans = await Promise.all(wanted.map((p) => subs.getPlan(p.id)));
+  planCache = { at: Date.now(), plans };
+  return plans;
+}
+
+async function loadState() {
+  const [plans, subscriptions] = await Promise.all([
+    loadPlans(),
+    Promise.all(seed.subscriptionIds.map(async (id) => {
+      try { return await subs.getSubscription(id); }
+      catch (e) { return { id, status: 'UNREACHABLE', error: String(e.message).slice(0, 160) }; }
+    })),
+  ]);
+  return { plans, subscriptions };
 }
 
 const routes = {
