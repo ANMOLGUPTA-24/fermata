@@ -10,6 +10,10 @@ resume them later, or let them go gracefully.
 
 Built for the **PayPal AI Hackathon** (Nov 2026).
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ANMOLGUPTA-24/fermata)
+
+The button deploys the free-tier blueprint in `render.yaml`. You will be asked for your own PayPal sandbox credentials and a Gemini key, then run `npm run seed` locally against the same credentials to create the subscriptions.
+
 ---
 
 ## The problem
