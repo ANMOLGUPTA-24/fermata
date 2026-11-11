@@ -14,6 +14,7 @@ async function call(model, body) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(25_000),
   });
   const json = await res.json();
   if (!res.ok) throw new Error(`Gemini ${model} ${res.status}: ${json?.error?.message || ''}`);
@@ -38,7 +39,7 @@ export async function judgeJSON({ prompt, schema, system }) {
   try {
     raw = await call(MODEL, body);
   } catch (err) {
-    if (!/429|404|503|RESOURCE_EXHAUSTED/i.test(String(err))) throw err;
+    if (!/429|404|500|503|RESOURCE_EXHAUSTED|timeout|aborted|fetch failed/i.test(String(err))) throw err;
     raw = await call(FALLBACK, body);
   }
   return JSON.parse(raw);

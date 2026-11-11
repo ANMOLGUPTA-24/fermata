@@ -55,17 +55,23 @@ that menu. If it returns anything else, the pick is rejected and the case is
 escalated to a human — and the UI renders the menu as a ballot, so you can see
 exactly what it was allowed to choose from and what it picked.
 
-A hallucinated payment action isn't merely discouraged here. It's unrepresentable.
+The decision is then held server-side under a single-use id, and the execute
+endpoint accepts only that id — never an action name. A hallucinated payment
+action isn't merely discouraged here; neither the model nor the browser has a
+way to express one.
 
-## It cannot silently move anyone's money
+## Changing someone's plan takes their consent
 
-PayPal will not let a merchant change a subscriber's price without the
-subscriber's consent. When Fermata decides on a downgrade, the API returns an
-approval link rather than applying the change, and Fermata surfaces that link
+When Fermata decides on a downgrade, PayPal's `revise` call does not apply it —
+it returns an approval link for the subscriber, and Fermata surfaces that link
 instead of pretending the job is done.
 
-That guarantee is enforced by the payment rails, not by our good intentions. And
-the retention prompt explicitly instructs the model that **"release" is a correct
+We want to be exact about this, because we tested the edges: the consent step
+applies to moving a subscriber to a *different plan*. PayPal does allow a
+merchant to patch a subscription's price server-side without approval. Fermata
+never puts that on the menu. That restraint is ours, by design.
+
+The retention prompt also instructs the model that **"release" is a correct
 outcome** — a retention tool that cannot say goodbye is just a dark pattern with
 a language model attached.
 
@@ -83,12 +89,12 @@ A subscription paused in that state cannot be reactivated —
 `SESSION_STATE_NOT_VALID: "Buyer has not agreed to subscription"` — and it can't
 be revised back either, because revise is rejected once the status is SUSPENDED.
 
-Worse, **PayPal does not expose this state**. We compared a pending subscription
-against a clean one field by field: identical shape, identical links, identical
-`plan_id`. So Fermata tracks outstanding consent itself and flatly refuses to
-pause a subscription that has one, and `reset` explains the stranded case in
-plain language instead of surfacing a bare 422. We found this by stranding a
-test subscriber and having to replace them.
+And the pending state isn't visible in the API: we compared a pending
+subscription against a clean one and found the same fields, links and `plan_id`.
+So Fermata records outstanding consent itself — in the subscription's
+`custom_id` on PayPal, so it survives a restart — and takes "pause" off the menu
+while it is outstanding. We found all of this in the sandbox by stranding a test
+subscriber and having to replace them.
 
 ## What we learned
 
@@ -99,8 +105,11 @@ product's spine — and it turned out to be the most defensible thing about it.
 
 ## What's next
 
-Webhook-driven triggers (`BILLING.SUBSCRIPTION.PAYMENT.FAILED`) so involuntary
-churn is caught before the subscriber ever writes in; outcome tracking to learn
+Involuntary churn is the bigger prize: subscriptions that die from a failed card,
+where the subscriber never asked to leave. Fermata already reads PayPal's
+`failed_payments_count` and `outstanding_balance` and can retry an unpaid balance
+through the `capture` endpoint; next is driving that from the
+`BILLING.SUBSCRIPTION.PAYMENT.FAILED` webhook so it happens before anyone writes in; outcome tracking to learn
 which interventions actually hold; and per-merchant policy so the permitted
 action set reflects the business's own rules, not ours.
 
@@ -115,18 +124,19 @@ action set reflects the business's own rules, not ours.
 ## Testing instructions (paste into the submission form)
 
 The hosted demo is seeded with four live PayPal sandbox subscriptions and carries
-its own credentials — nothing needs to be configured to try it.
+its own credentials — nothing needs to be configured. The free host sleeps when
+idle, so the first load can take up to a minute.
 
 1. Pick a subscriber.
 2. Click one of the sample cancellation messages, or write your own.
-3. Click **Ask Fermata** — it reads live PayPal state and returns a decision
-   with the action menu it was constrained to.
-4. Click **Execute against PayPal** — the receipts panel shows the real HTTP
-   status, the state transition, and PayPal's debug ID.
-5. Click **Reset demo** to return every subscriber to ACTIVE.
+3. Click **Ask Fermata** — it reads live PayPal state and returns a decision,
+   shown against the menu of actions it was constrained to.
+4. For a pause or resume, click **Execute against PayPal** — the receipts panel
+   shows the real HTTP status, the state transition, and PayPal's debug ID.
+5. Click **Reset demo** to resume anything paused.
 
-Pause and resume are reversible, so the demo cannot be used up. "Let them go" is
-the only irreversible action.
-
-To run it locally against your own sandbox, see the README — note the warning
-about using a **US** sandbox business account.
+Pause and resume execute for real and are reversible. Cancelling and plan changes
+are decided but not executed on the shared demo, because one is irreversible and
+the other stages a consent request only the subscriber can clear; both run for
+real locally with `ALLOW_DESTRUCTIVE=true` (see the README, including the note
+about using a **US** sandbox business account).

@@ -5,7 +5,7 @@ services:
     plan: free
     buildCommand: "echo 'no dependencies to install'"
     startCommand: "node src/server.js"
-    healthCheckPath: /api/state
+    healthCheckPath: /healthz
     envVars:
       - key: PAYPAL_BASE
         value: https://api-m.sandbox.paypal.com

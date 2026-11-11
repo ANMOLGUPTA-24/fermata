@@ -16,7 +16,7 @@ export function planPrice(plan) {
  * What may we legally do to this subscription right now?
  * Derived from PayPal's own state machine plus retention policy.
  */
-export function permittedActions({ subscription, plans, signal, history, pendingConsent = false }) {
+export function permittedActions({ subscription, plans, signal, history, pendingConsent = false, allowDestructive = true }) {
   const status = subscription.status;
   const current = plans.find((p) => p.id === subscription.plan_id);
   const price = planPrice(current);
@@ -30,6 +30,22 @@ export function permittedActions({ subscription, plans, signal, history, pending
   // be reactivated after a pause: PayPal answers SESSION_STATE_NOT_VALID
   // ("Buyer has not agreed to subscription"). Pausing one would strand it, so
   // while consent is outstanding we do not offer the pause at all.
+  const outstanding = Number(subscription.billing_info?.outstanding_balance?.value ?? 0);
+  const failed = Number(subscription.billing_info?.failed_payments_count ?? 0);
+
+  // Involuntary churn: the subscription is dying from a failed card, not a
+  // decision. Retrying the outstanding balance is the actual remedy.
+  if (status === 'ACTIVE' && outstanding > 0) {
+    out.push({
+      action: 'retry_payment',
+      label: `Retry the outstanding $${outstanding.toFixed(2)}`,
+      call: 'POST /v1/billing/subscriptions/{id}/capture',
+      reversible: true,
+      monthlyDelta: 0,
+      rationale_hint: `There is an unpaid balance of $${outstanding.toFixed(2)} and ${failed} failed payment(s). If the card has since been fixed, this recovers the money with no conversation at all. This is involuntary churn: the subscriber never asked to leave.`,
+    });
+  }
+
   if (status === 'ACTIVE' && !pendingConsent) {
     out.push({
       action: 'pause',
@@ -46,6 +62,7 @@ export function permittedActions({ subscription, plans, signal, history, pending
         label: `Move to ${p.name} ($${planPrice(p).toFixed(2)}/mo)`,
         call: 'POST /v1/billing/subscriptions/{id}/revise',
         reversible: true,
+        needsConsent: true,
         monthlyDelta: planPrice(p) - price,
         rationale_hint: 'Keeps revenue flowing when the objection is price or unused capacity, rather than the product itself.',
       });
@@ -115,21 +132,26 @@ Rules you must follow:
   far more than the subscription is worth. Saying goodbye well is a valid outcome.
 - Cite the specific evidence you relied on. Do not invent facts about the account.
 - The message to the subscriber must be short, plain, human, and must not use
-  guilt, false scarcity, or dark patterns.`;
+  guilt, false scarcity, or dark patterns.
+- A pause has NO end date. It stops billing until someone resumes it. Never say
+  "for the next month" or promise a date, because no such date exists.
+- Write the message as a DRAFT addressed to the subscriber, for a human to send.
+  Nothing has happened yet when you write it, so do not claim an action is
+  already done. Offer it, or describe what is about to happen.`;
 
-export async function decide({ subscription, plans, signal, history, pendingConsent = false }) {
-  const actions = permittedActions({ subscription, plans, signal, history, pendingConsent });
+export async function decide({ subscription, plans, signal, history, pendingConsent = false, allowDestructive = true }) {
+  const actions = permittedActions({ subscription, plans, signal, history, pendingConsent, allowDestructive });
   const current = plans.find((p) => p.id === subscription.plan_id);
 
   const prompt = `## Subscriber signal
 "${signal.text}"
-Signal type: ${signal.type}
+Signal type: ${signal.type}${signal.type === 'payment_failed' ? '\n(No message from the subscriber. This is a FAILED PAYMENT, not a stated intent to leave.)' : ''}
 
 ## Subscription (live from PayPal)
 id: ${subscription.id}
 status: ${subscription.status}
 plan: ${current?.name || subscription.plan_id} at $${planPrice(current).toFixed(2)}/month
-subscriber: ${subscription.subscriber?.name?.given_name || 'unknown'} ${subscription.subscriber?.name?.surname || ''}
+subscriber: ${signal.subscriberName || subscription.subscriber?.name?.given_name || 'unknown'}
 started: ${subscription.start_time || 'unknown'}
 last payment: ${subscription.billing_info?.last_payment?.amount?.value ?? 'none'} ${subscription.billing_info?.last_payment?.amount?.currency_code ?? ''}
 outstanding balance: ${subscription.billing_info?.outstanding_balance?.value ?? '0.00'}

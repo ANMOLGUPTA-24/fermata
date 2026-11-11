@@ -35,3 +35,24 @@ export async function transactions(id, days = 365) {
   const r = await pp('GET', `/v1/billing/subscriptions/${id}/transactions?${q}`);
   return r.ok ? r.body?.transactions || [] : [];
 }
+
+/**
+ * PayPal does not expose whether a subscription has a plan change awaiting the
+ * subscriber's approval, so we record it ourselves in custom_id. That survives
+ * a server restart and a free-tier spin-down, which an in-process Set does not.
+ */
+export const setCustomId = (id, value) =>
+  pp('PATCH', `/v1/billing/subscriptions/${id}`, [
+    { op: 'replace', path: '/custom_id', value },
+  ]);
+
+/**
+ * Retry an outstanding balance — the actual remedy for involuntary churn,
+ * where a subscription is dying from a failed card rather than a decision.
+ */
+export const captureOutstanding = (id, amount, note) =>
+  pp('POST', `/v1/billing/subscriptions/${id}/capture`, {
+    note: note || 'Retrying the outstanding balance',
+    capture_type: 'OUTSTANDING_BALANCE',
+    amount: { currency_code: 'USD', value: Number(amount).toFixed(2) },
+  });

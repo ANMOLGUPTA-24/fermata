@@ -83,6 +83,10 @@ button.ghost:hover{border-color:var(--accent);color:var(--accent)}
 .spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .note{font-size:13px;color:var(--muted);margin-top:14px}
+.tally{display:flex;gap:28px;flex-wrap:wrap;margin:-10px 0 24px}
+.tally .t{display:flex;flex-direction:column}
+.tally b{font-family:'Instrument Serif',serif;font-size:27px;font-weight:400;line-height:1.1}
+.tally span{font:500 11px/1 'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:5px}
 a{color:var(--accent)}
 </style>
 </head>
@@ -93,6 +97,7 @@ a{color:var(--accent)}
   <div class="tagline">A cancellation is a negotiation, not a button.<br>Retention decisions executed as real PayPal subscription actions.</div>
   <div class="badges" id="badges"></div>
 </header>
+<div id="tally" class="tally"></div>
 
 <div class="grid">
   <div class="panel">
@@ -104,6 +109,13 @@ a{color:var(--accent)}
     <div class="panel">
       <div class="panel-h"><h2>Retention desk</h2><span id="who" style="font-size:13px;color:var(--muted)"></span></div>
       <div class="body">
+        <div style="display:flex;gap:16px;align-items:center;margin-bottom:10px">
+          <label style="margin:0">Signal</label>
+          <label style="text-transform:none;letter-spacing:0;font-weight:400;font-size:14px;color:var(--ink)">
+            <input type="radio" name="sig" value="cancel_intent" checked> they asked to cancel</label>
+          <label style="text-transform:none;letter-spacing:0;font-weight:400;font-size:14px;color:var(--ink)">
+            <input type="radio" name="sig" value="payment_failed"> their payment failed</label>
+        </div>
         <label for="signal">What did the subscriber say?</label>
         <textarea id="signal" placeholder="Paste the cancellation message, support ticket, or reason code…"></textarea>
         <div class="chips" id="chips"></div>
@@ -130,6 +142,7 @@ const SAMPLES = [
   "This isn't the right tool for me. I've moved to something else.",
   "Going travelling for three months, won't need it until March.",
 ];
+const FAILED = "Card on file was declined. No message from the subscriber.";
 
 function money(n){ return (n<0?'-':'+') + '$' + Math.abs(n).toFixed(2); }
 
@@ -142,6 +155,21 @@ async function api(path, body){
 function renderBadges(){
   $('#badges').innerHTML =
     `<span class="badge">PayPal ${STATE.environment}</span><span class="badge">${STATE.model}</span>`;
+}
+
+function renderTally(){
+  let active=0, paused=0, owed=0;
+  for(const s of STATE.subscriptions){
+    const plan = STATE.plans.find(x=>x.id===s.plan_id);
+    const price = plan ? plan.price : 0;
+    if(s.status==='ACTIVE') active += price;
+    if(s.status==='SUSPENDED') paused += price;
+    owed += Number(s.billing_info?.outstanding_balance?.value || 0);
+  }
+  $('#tally').innerHTML =
+    `<div class="t"><b>$${active.toFixed(2)}</b><span>billing monthly</span></div>` +
+    `<div class="t"><b>$${paused.toFixed(2)}</b><span>paused, not lost</span></div>` +
+    `<div class="t"><b>$${owed.toFixed(2)}</b><span>outstanding</span></div>`;
 }
 
 function renderList(){
@@ -181,13 +209,14 @@ function renderVerdict(v, sub){
       <div class="tick">${picked?'✓':''}</div>
       <div style="flex:1">
         <div class="lbl">${a.label}</div>
-        <div class="call">${a.call || 'no PayPal call'} ${a.reversible?'· reversible':'· IRREVERSIBLE'}</div>
+        <div class="call">${a.call || 'no PayPal call'} ${a.needsConsent ? '· needs subscriber consent' : (a.reversible?'· reversible':'· IRREVERSIBLE')}</div>
       </div>
       <div class="delta ${d<0?'neg':(d>0?'pos':'')}">${d===0?'—':money(d)}/mo</div>
     </div>`;
   }).join('');
 
-  const canExec = v.plan && v.plan.action !== 'escalate';
+  const gated = !STATE.allowDestructive && v.plan && (v.plan.action === 'release' || v.plan.action === 'downgrade');
+  const canExec = v.plan && v.plan.action !== 'escalate' && !gated;
   $('#out').innerHTML = `
     <div class="ballot">${rows}</div>
     <div class="verdict">
@@ -198,6 +227,7 @@ function renderVerdict(v, sub){
       <div class="quote">“${v.message_to_subscriber}”</div>
       ${v.rejected_pick ? `<div class="note">⚠ The model proposed <b>${v.rejected_pick}</b>, which is not permitted for a subscription in status ${sub.status}. It was rejected and escalated instead.</div>`:''}
       ${canExec ? `<div style="margin-top:16px"><button class="primary" id="exec">Execute against PayPal</button></div>`:''}
+      ${gated ? `<div class="note">This action is ${v.plan.action==='release'?'irreversible':'a consent request only the subscriber can clear'}, so execution is switched off on the shared demo — otherwise one visitor could use it up for everyone. It runs for real locally with <code>ALLOW_DESTRUCTIVE=true</code>.</div>`:''}
     </div>`;
   if(canExec) $('#exec').onclick = () => execute(v);
 }
@@ -208,7 +238,10 @@ async function ask(){
   $('#ask').disabled = true;
   $('#out').innerHTML = `<div class="note"><span class="spinner"></span> Reading live subscription state from PayPal, then deciding…</div>`;
   try{
-    const { subscription, verdict } = await api('/api/decide', { subscriptionId: SELECTED, text });
+    const signalType = document.querySelector('input[name=sig]:checked').value;
+    const r = await api('/api/decide', { subscriptionId: SELECTED, text, signalType });
+    if (r.error) throw new Error(r.error);
+    const { subscription, verdict } = r;
     VERDICT = verdict; renderVerdict(verdict, subscription);
   }catch(e){ $('#out').innerHTML = `<div class="note" style="color:var(--danger)">${e.message}</div>`; }
   $('#ask').disabled = false;
@@ -218,10 +251,9 @@ async function execute(v){
   $('#exec').disabled = true;
   $('#exec').innerHTML = '<span class="spinner"></span> Calling PayPal…';
   try{
-    const { receipt } = await api('/api/execute', {
-      subscriptionId: SELECTED, action: v.chosen_action,
-      targetPlanId: v.plan.targetPlanId, reason: (v.reasoning||'').slice(0,120),
-    });
+    const res = await api('/api/execute', { subscriptionId: SELECTED, verdictId: v.verdictId });
+    if (res.error) { $('#out').innerHTML = `<div class="note" style="color:var(--danger)">${res.error}</div>`; return; }
+    const { receipt } = res;
     await load();
     select(SELECTED);
     if(receipt.requiresConsent){
@@ -244,7 +276,7 @@ function renderReceipts(){
 
 async function load(){
   STATE = await api('/api/state');
-  renderBadges(); renderList(); renderReceipts();
+  renderBadges(); renderTally(); renderList(); renderReceipts();
 }
 
 $('#ask').onclick = ask;

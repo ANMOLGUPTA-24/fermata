@@ -16,6 +16,7 @@ export async function accessToken() {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: 'grant_type=client_credentials',
+    signal: AbortSignal.timeout(15_000),
   });
   const body = await res.json();
   if (!res.ok) throw new Error(`PayPal auth failed (${res.status}): ${JSON.stringify(body)}`);
@@ -34,6 +35,7 @@ export async function pp(method, path, body, extraHeaders = {}) {
       ...extraHeaders,
     },
     body: body === undefined ? undefined : JSON.stringify(body),
+    signal: AbortSignal.timeout(20_000),
   });
   const text = await res.text();
   let parsed = null;

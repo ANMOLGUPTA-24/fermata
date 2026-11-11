@@ -13,10 +13,10 @@ const PLANS = [
 ];
 
 const PEOPLE = [
-  { given_name: 'Priya',  surname: 'Raman'   },
-  { given_name: 'Marcus', surname: 'Bell'    },
-  { given_name: 'Lena',   surname: 'Okafor'  },
-  { given_name: 'Tomas',  surname: 'Varga'   },
+  { given_name: 'Priya',  surname: 'Raman',  note: 'Freelance illustrator. Two projects, steady usage.' },
+  { given_name: 'Marcus', surname: 'Bell',   note: 'Agency owner. Heavy user, invoices clients monthly.' },
+  { given_name: 'Lena',   surname: 'Okafor', note: 'Student. Signed up for one module, light usage.' },
+  { given_name: 'Tomas',  surname: 'Varga',  note: 'Photographer. Seasonal — quiet every winter.' },
 ];
 
 const product = await ppOrThrow('POST', '/v1/catalogs/products', {
@@ -57,7 +57,7 @@ for (let i = 0; i < n; i++) {
   const who = PEOPLE[i % PEOPLE.length];
   const sub = await ppOrThrow('POST', '/v1/billing/subscriptions', {
     plan_id: plans.full,
-    subscriber: { name: who, email_address: BUYER },
+    subscriber: { name: { given_name: who.given_name, surname: who.surname }, email_address: BUYER },
     application_context: {
       brand_name: 'Fermata',
       user_action: 'SUBSCRIBE_NOW',
@@ -67,7 +67,7 @@ for (let i = 0; i < n; i++) {
     },
   }, H());
   const approve = sub.links.find((l) => l.rel === 'approve').href;
-  pending.push({ id: sub.id, name: `${who.given_name} ${who.surname}`, approve });
+  pending.push({ id: sub.id, name: `${who.given_name} ${who.surname}`, note: who.note, approve });
   console.log(`subscription ${sub.id}  ${who.given_name} ${who.surname}`);
 }
 
@@ -77,6 +77,7 @@ await writeFile('data/seed.json', JSON.stringify({
   planMap: plans,
   subscriptionIds: pending.map((p) => p.id),
   buyer: BUYER,
+  people: Object.fromEntries(pending.map((p) => [p.id, { name: p.name, note: p.note }])),
 }, null, 2));
 
 await writeFile('data/approve-links.txt', pending.map((p) => `${p.name}\n${p.approve}\n`).join('\n'));

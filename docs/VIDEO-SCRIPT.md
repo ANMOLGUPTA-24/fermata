@@ -2,7 +2,9 @@
 
 **Target: 2:40. Hard ceiling 3:00 — judges are not required to watch past it.**
 Record at 1280x720 or larger. No music (the rules forbid unlicensed audio).
-Have the app open at `/` with all four subscribers ACTIVE before you hit record.
+Record against your **local** copy started with `ALLOW_DESTRUCTIVE=true npm run dev`,
+so the plan-change step really executes. All four subscribers should be ACTIVE
+before you hit record. Do NOT click Execute on "Let them go" — it is permanent.
 
 ---
 
@@ -20,9 +22,9 @@ Have the app open at `/` with all four subscribers ACTIVE before you hit record.
 
 ### 0:22 – 0:35 · What you're looking at
 
-> "These four subscribers are live PayPal subscriptions in the sandbox.
-> The status, the plan, the price — all of it is fetched from PayPal on every
-> page load. Nothing here is mock data."
+> "These four are live PayPal subscriptions in the sandbox.
+> The status, the plan, the price — all fetched from PayPal on every page load.
+> The names are our own customer records, joined to PayPal by subscription ID."
 
 *Point at the `PayPal sandbox` and `gemini-flash-latest` badges.*
 
@@ -41,6 +43,9 @@ Click **Ask Fermata**.*
 > invent an API call — it only gets to **choose** from this menu, and justify it.
 > If it returns anything that isn't on the list, the pick is rejected and the case
 > goes to a human."
+
+> "And the browser can't cheat either — the server holds the decision, and will
+> only execute the one it issued."
 
 > "It chose pause. Not a discount, not a guilt trip. Pause — because the reason
 > was temporary, and pausing costs the subscriber nothing."
@@ -70,25 +75,29 @@ Click **Ask Fermata**.*
 > A retention tool that can't say goodbye is just a dark pattern with a
 > language model attached."
 
-### 1:55 – 2:20 · It cannot move money silently
+### 1:55 – 2:20 · A plan change takes consent
 
-*Trigger a downgrade and show the consent screen.*
+*Click Tomas. Use the chip: "I'm not using this enough to justify $29."
+Ask, then Execute.*
 
 > "When it decides on a downgrade, something interesting happens.
-> PayPal will not let a merchant change a subscriber's price without the
-> subscriber agreeing. So the API hands back an approval link instead of
-> applying the change — and Fermata surfaces that link rather than pretending
-> the job is done."
+> PayPal doesn't apply a plan change on the merchant's say-so. It hands back an
+> approval link for the subscriber — and Fermata surfaces that link rather than
+> pretending the job is done."
 
-> "Fermata can't silently move anyone's money. That isn't a promise we're
-> making. It's enforced by the payment rails."
+> "Until they approve, Fermata takes 'pause' off the menu for this subscriber,
+> because we found in the sandbox that pausing mid-consent strands the
+> subscription. That flag is stored on PayPal itself."
+
+*After recording: open that consent link and click Agree, so Tomas's change
+completes and nothing is left pending.*
 
 ### 2:20 – 2:40 · Close
 
 *Click **Reset demo**; the board returns to ACTIVE.*
 
-> "Pause and resume are reversible, so this demo can be run as many times as
-> you like without consuming anything.
+> "Pause and resume are reversible, so the hosted demo can be run as many times
+> as you like without using anything up.
 > PayPal Subscriptions, Billing Plans and Catalog for the money.
 > Gemini for the judgement. Every decision leaves a receipt.
 > That's Fermata."
