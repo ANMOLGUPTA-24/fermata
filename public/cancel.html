@@ -3,48 +3,52 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cancel subscription — Fermata Studio</title>
+<title>Cancel your Fermata Studio subscription</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f7f5f1;--panel:#fffefb;--ink:#17150f;--muted:#6b6557;--line:#e2ddd2;--accent:#1c5d4a;--accent-soft:#e6f0ea;--danger:#8c2f22}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#12110f;--panel:#1a1917;--ink:#f0ece3;--muted:#9a9384;--line:#2c2a26;--accent:#6fd3ad;--accent-soft:#16302a;--danger:#f09384}}
-:root[data-theme="dark"]{--bg:#12110f;--panel:#1a1917;--ink:#f0ece3;--muted:#9a9384;--line:#2c2a26;--accent:#6fd3ad;--accent-soft:#16302a;--danger:#f09384}
+:root{--paper:#F3F5F8;--sheet:#FFFFFF;--ink:#101B33;--soft:#56617A;--staff:#B9C2D0;--rule:#D9DFE8;--act:#2747D8;--held:#B97A0E;--gone:#A8382C}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-.wrap{max-width:560px;margin:0 auto;padding:40px 16px 80px}
-.brand{font-family:'Instrument Serif',Georgia,serif;font-size:26px;margin-bottom:28px}
-.brand em{color:var(--accent)}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:26px 24px}
-h1{font-family:'Instrument Serif',serif;font-weight:400;font-size:31px;line-height:1.15;margin:0 0 8px}
-.sub{color:var(--muted);font-size:14.5px;margin-bottom:20px}
-.plan{font:400 12.5px 'JetBrains Mono',monospace;color:var(--muted);padding:10px 12px;border:1px solid var(--line);border-radius:9px;margin-bottom:20px;word-break:break-all}
-label{display:block;font-weight:600;font-size:14.5px;margin-bottom:8px}
-textarea{width:100%;min-height:96px;resize:vertical;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit}
-textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
-.chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 18px}
-.chip{font-size:13px;padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--muted);cursor:pointer}
-.chip:hover{border-color:var(--accent);color:var(--accent)}
-button.primary{background:var(--accent);color:var(--panel);border:0;padding:12px 20px;border-radius:9px;font:600 15px Inter,sans-serif;cursor:pointer;width:100%}
-button.primary:disabled{opacity:.5;cursor:not-allowed}
-button.quiet{background:transparent;border:0;color:var(--muted);font:500 14px Inter,sans-serif;cursor:pointer;text-decoration:underline;margin-top:14px;width:100%;padding:8px}
-button.quiet:hover{color:var(--danger)}
-.offer{border-left:3px solid var(--accent);padding-left:16px;margin:4px 0 22px}
-.offer p{margin:8px 0 0;color:var(--ink)}
-.note{font-size:13.5px;color:var(--muted);margin-top:16px}
-.err{color:var(--danger)}
-.spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 17px/1.5 'Bricolage Grotesque',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.code{font-family:'DM Mono',ui-monospace,monospace;font-size:.8em}
+a{color:var(--act)}
+button{font:inherit}
+:focus-visible{outline:2px solid var(--act);outline-offset:2px}
+.page{max-width:620px;margin:0 auto;padding:30px 20px 90px}
+.brand{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:2px solid var(--ink);padding-bottom:10px;font-weight:600}
+.brand span{color:var(--soft);font-weight:400;font-size:14.5px}
+h1{font-size:38px;line-height:1.08;letter-spacing:-.02em;font-weight:700;margin:38px 0 10px}
+.sub{color:var(--soft);margin:0 0 24px}
+textarea{width:100%;min-height:110px;resize:vertical;padding:13px 15px;border:1px solid var(--staff);border-radius:6px;background:var(--sheet);color:var(--ink);font:inherit}
+.samples{margin:10px 0 22px;display:flex;flex-direction:column;gap:2px}
+.samples button{background:none;border:0;padding:3px 0;text-align:left;color:var(--soft);cursor:pointer;font-size:15px}
+.samples button:hover{color:var(--act)}
+.samples button::before{content:"“"} .samples button::after{content:"”"}
+.go{background:var(--act);color:#fff;border:0;border-radius:6px;padding:13px 22px;font-weight:600;cursor:pointer}
+.go:disabled{opacity:.45;cursor:not-allowed}
+.leave{display:block;margin-top:18px;background:none;border:0;padding:0;color:var(--soft);text-decoration:underline;cursor:pointer;font-size:15.5px}
+.leave:hover{color:var(--gone)}
+.go.leave-main{background:var(--ink)}
+.hold{width:118px;height:76px;margin:34px 0 -18px;color:var(--held);display:block}
+.hold .arc{stroke-dasharray:160;animation:draw .9s ease-out both}
+.hold circle{animation:pop .3s ease-out .8s both}
+@keyframes draw{from{stroke-dashoffset:160}to{stroke-dashoffset:0}}
+@keyframes pop{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.hold .arc,.hold circle{animation:none}}
+.offer{font-size:19px;max-width:54ch;margin:0 0 26px}
+.note{margin-top:18px;color:var(--soft);font-size:15.5px}
+.bad{color:var(--gone)}
+.wait{display:inline-block;width:12px;height:12px;border:2px solid var(--staff);border-top-color:var(--act);border-radius:50%;animation:spin .7s linear infinite;vertical-align:-1px;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
-a{color:var(--accent)}
-.foot{margin-top:22px;font-size:13px;color:var(--muted);text-align:center}
+.foot{margin-top:56px;padding-top:14px;border-top:1px solid var(--rule);color:var(--soft);font-size:14.5px}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="brand">Fer<em>mata</em> Studio</div>
-  <div class="card" id="card"><span class="spinner"></span> Loading your subscription…</div>
-  <div class="foot">This is the subscriber's side of the demo. <a href="/">Open the retention desk</a> to watch it arrive.</div>
+<div class="page">
+  <div class="brand">Fermata Studio <span id="plan"></span></div>
+  <main id="main"><p class="note"><span class="wait"></span>Finding your subscription.</p></main>
+  <p class="foot">This is the subscriber's side of the demo. The business sees what happens here on its <a href="/">retention desk</a>.</p>
 </div>
 <script>
 const $ = (s) => document.querySelector(s);
@@ -53,33 +57,28 @@ const SID = new URLSearchParams(location.search).get('s');
 const SAMPLES = [
   "Money's really tight this month.",
   "I'm not using it enough to justify the price.",
-  "It isn't the right tool for me — I've moved on.",
+  "It isn't the right tool for me. I've moved on.",
   "Travelling for a few months, won't need it.",
 ];
+const HOLD = `<svg class="hold" viewBox="0 0 118 76" aria-hidden="true"><path class="arc" d="M9 66 A50 50 0 0 1 109 66" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"/><circle cx="59" cy="57" r="8.5" fill="currentColor"/></svg>`;
 let ME = null, VERDICT = null;
 
 async function api(path, body){
   const r = await fetch(path, body ? {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)} : {});
-  const j = await r.json();
+  const j = await r.json().catch(() => ({ error: 'The server sent something unreadable.' }));
   if(!r.ok || j.error) throw new Error(j.error || r.statusText);
   return j;
 }
 
-function planLine(){
-  return `${esc(ME.planName)} · $${ME.price.toFixed(2)}/month · ${esc(ME.status)}<br>PayPal subscription ${esc(ME.id)}`;
-}
-
 function showForm(){
-  $('#card').innerHTML = `
-    <h1>Cancel your subscription</h1>
-    <div class="sub">Hi ${esc(ME.first)}. Sorry to see you go.</div>
-    <div class="plan">${planLine()}</div>
-    <label for="why">Before you go, what's the reason?</label>
-    <textarea id="why" placeholder="A sentence is plenty."></textarea>
-    <div class="chips">${SAMPLES.map((s,i)=>`<button class="chip" data-i="${i}">${esc(s)}</button>`).join('')}</div>
-    <button class="primary" id="go">Continue</button>
+  $('#main').innerHTML = `
+    <h1>Why are you leaving, ${esc(ME.first)}?</h1>
+    <p class="sub">A sentence is plenty. You can still cancel on the next screen whatever you write.</p>
+    <textarea id="why" aria-label="Your reason for cancelling"></textarea>
+    <div class="samples">${SAMPLES.map((s,i)=>`<button data-i="${i}">${esc(s)}</button>`).join('')}</div>
+    <button class="go" id="go">Continue</button>
     <div id="msg"></div>`;
-  document.querySelectorAll('.chip').forEach(c => c.onclick = () => { $('#why').value = SAMPLES[c.dataset.i]; });
+  document.querySelectorAll('.samples button').forEach(c => c.onclick = () => { $('#why').value = SAMPLES[c.dataset.i]; });
   $('#go').onclick = decide;
 }
 
@@ -87,30 +86,31 @@ async function decide(){
   const text = $('#why').value.trim();
   if(!text){ $('#why').focus(); return; }
   $('#go').disabled = true;
-  $('#msg').innerHTML = `<div class="note"><span class="spinner"></span> One moment…</div>`;
+  $('#msg').innerHTML = `<p class="note"><span class="wait"></span>Looking at your subscription. This can take ten seconds or so.</p>`;
   try{
     const { verdict } = await api('/api/decide', { subscriptionId: SID, text, source: 'subscriber' });
     VERDICT = verdict; showOffer();
-  }catch(e){ $('#msg').innerHTML = `<div class="note err">${esc(e.message)}</div>`; $('#go').disabled = false; }
+  }catch(e){ $('#msg').innerHTML = `<p class="note bad">${esc(e.message)}</p>`; $('#go').disabled = false; }
 }
 
 const OFFER = {
-  pause:     { title: 'Pause instead?',            cta: 'Pause my subscription' },
-  downgrade: { title: 'Switch to a smaller plan?', cta: 'Switch plan' },
-  resume:    { title: 'Pick it back up?',          cta: 'Resume my subscription' },
-  release:   { title: "Understood — we'll let you go.", cta: null },
+  pause:     { title: 'Pause it instead?',            cta: 'Pause my subscription', hold: true },
+  downgrade: { title: 'Move to the smaller plan?',    cta: 'Move me to the smaller plan' },
+  resume:    { title: 'Pick it back up?',             cta: 'Resume my subscription' },
+  release:   { title: "That's fair. We'll let you go.", cta: null },
   escalate:  { title: 'A person will take this from here.', cta: null },
 };
 
 function showOffer(){
   const o = OFFER[VERDICT.chosen_action] || OFFER.escalate;
-  const sub = VERDICT.chosen_action === 'downgrade' && VERDICT.plan ? `<div class="sub" style="margin:6px 0 0">${esc(VERDICT.plan.label)}</div>` : '';
-  $('#card').innerHTML = `
-    <div class="offer"><h1>${esc(o.title)}</h1>${sub}<p>${esc(VERDICT.message_to_subscriber)}</p></div>
-    ${o.cta ? `<button class="primary" id="accept">${esc(o.cta)}</button>` : ''}
-    ${VERDICT.chosen_action === 'release'
-        ? `<button class="primary" id="leave">Cancel my subscription</button>`
-        : `<button class="quiet" id="leave">No thanks — cancel anyway</button>`}
+  const release = VERDICT.chosen_action === 'release';
+  $('#main').innerHTML = `
+    ${o.hold ? HOLD : ''}
+    <h1>${esc(o.title)}</h1>
+    <p class="offer">${esc(VERDICT.message_to_subscriber)}</p>
+    ${o.cta ? `<button class="go" id="accept">${esc(o.cta)}</button>` : ''}
+    ${release ? `<button class="go leave-main" id="leave">Cancel my subscription</button>`
+              : `<button class="leave" id="leave">No thanks, cancel my subscription</button>`}
     <div id="msg"></div>`;
   if(o.cta) $('#accept').onclick = accept;
   $('#leave').onclick = leave;
@@ -118,45 +118,40 @@ function showOffer(){
 
 async function accept(){
   $('#accept').disabled = true;
-  $('#msg').innerHTML = `<div class="note"><span class="spinner"></span> Updating your subscription with PayPal…</div>`;
+  $('#msg').innerHTML = `<p class="note"><span class="wait"></span>Updating your subscription with PayPal.</p>`;
   try{
     const { receipt } = await api('/api/execute', { subscriptionId: SID, verdictId: VERDICT.verdictId });
-    if(receipt.requiresConsent){
-      done('One more step', `PayPal needs you to approve the plan change yourself. <a href="${esc(receipt.consentLink)}" target="_blank" rel="noopener">Approve it at PayPal</a>.`);
-    } else if(receipt.statusAfter === 'SUSPENDED'){
-      done('Paused.', 'You won\'t be charged until you choose to resume. Nothing has been deleted.');
-    } else if(receipt.statusAfter === 'ACTIVE'){
-      done('Welcome back.', 'Your subscription is active again.');
-    } else {
-      done('Done.', `Your subscription is now ${esc(receipt.statusAfter)}.`);
-    }
-  }catch(e){ $('#msg').innerHTML = `<div class="note">${esc(e.message)}</div>`; }
+    if(receipt.requiresConsent) done('One more step', `PayPal needs you to approve the plan change yourself. <a href="${esc(receipt.consentLink)}" target="_blank" rel="noopener">Approve it at PayPal</a>.`);
+    else if(receipt.statusAfter === 'SUSPENDED') done('Paused', "You won't be charged until you choose to resume. Nothing has been deleted.", true);
+    else if(receipt.statusAfter === 'ACTIVE') done('Welcome back', 'Your subscription is running again.');
+    else done('Done', `Your subscription is now ${esc(receipt.statusAfter.toLowerCase())}.`);
+  }catch(e){ $('#msg').innerHTML = `<p class="note">${esc(e.message)}</p>`; if($('#accept')) $('#accept').disabled = false; }
 }
 
 async function leave(){
-  $('#msg').innerHTML = `<div class="note"><span class="spinner"></span> Processing…</div>`;
+  $('#msg').innerHTML = `<p class="note"><span class="wait"></span>Cancelling.</p>`;
   try{
     const r = await api('/api/cancel-anyway', { subscriptionId: SID, verdictId: VERDICT && VERDICT.verdictId });
-    if(r.executed) done('Cancelled.', 'Your subscription has ended. Thanks for the time you spent with us.');
-    else done('Cancellation recorded.', esc(r.note));
-  }catch(e){ $('#msg').innerHTML = `<div class="note err">${esc(e.message)}</div>`; }
+    if(r.executed) done('Cancelled', 'Your subscription has ended. Thank you for the time you spent with us.');
+    else done('Cancellation recorded', esc(r.note));
+  }catch(e){ $('#msg').innerHTML = `<p class="note bad">${esc(e.message)}</p>`; }
 }
 
-function done(title, html){
-  $('#card').innerHTML = `<h1>${esc(title)}</h1><p class="sub" style="margin-top:10px">${html}</p>
-    <div class="note"><a href="/">See this on the retention desk →</a></div>`;
+function done(title, html, hold){
+  $('#main').innerHTML = `${hold ? HOLD : ''}<h1>${esc(title)}</h1><p class="offer">${html}</p>`;
 }
 
 (async () => {
   try{
     const st = await api('/api/state');
     const s = st.subscriptions.find(x => x.id === SID);
-    if(!s){ $('#card').innerHTML = `<h1>No such subscription</h1><p class="sub">Open this page from a subscriber's link on the <a href="/">retention desk</a>.</p>`; return; }
+    if(!s){ $('#main').innerHTML = `<h1>We couldn't find that subscription</h1><p class="sub">Open this page from a subscriber's link on the <a href="/">retention desk</a>.</p>`; return; }
     const plan = st.plans.find(p => p.id === s.plan_id) || { name: 'Plan', price: 0 };
     const person = st.people[SID] || { name: 'there' };
-    ME = { id: s.id, status: s.status, planName: plan.name, price: plan.price, first: person.name.split(' ')[0] };
+    ME = { first: person.name.split(' ')[0] };
+    $('#plan').textContent = `${plan.name.replace('Studio — ','')} plan, $${plan.price.toFixed(2)} a month`;
     showForm();
-  }catch(e){ $('#card').innerHTML = `<div class="note err">${esc(e.message)}</div>`; }
+  }catch(e){ $('#main').innerHTML = `<p class="note bad">${esc(e.message)}</p>`; }
 })();
 </script>
 </body>

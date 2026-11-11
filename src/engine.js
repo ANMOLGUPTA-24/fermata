@@ -43,7 +43,7 @@ export function permittedActions({ subscription, plans, signal, history, pending
       out.push({
         action: 'downgrade',
         targetPlanId: p.id,
-        label: `Move to ${p.name} ($${planPrice(p).toFixed(2)}/mo)`,
+        label: `Move to the ${p.name.replace('Studio — ', '')} plan, $${planPrice(p).toFixed(2)} a month`,
         call: 'POST /v1/billing/subscriptions/{id}/revise',
         reversible: true,
         needsConsent: true,
